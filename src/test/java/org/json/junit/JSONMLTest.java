@@ -1157,4 +1157,32 @@ public class JSONMLTest {
         assertEquals("x", current);
     }
 
+    /**
+     * JSONML content and attribute values are converted with XML.stringToValue.
+     * Numeric strings longer than the maximum number length (1000 chars) must
+     * be kept as strings instead of being converted (CVE-2026-59171).
+     */
+    @Test
+    public void testMaxNumberLength() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 100; ++i) {
+            sb.append("9999999999");
+        }
+
+        // at max length: parsed as number
+        JSONArray ja1 = JSONML.toJSONArray("<a>" + sb + "</a>");
+        assertTrue("Expected Number but got " + ja1.get(1).getClass(), ja1.get(1) instanceof Number);
+        JSONObject jo1 = JSONML.toJSONObject("<a b=\"" + sb + "\"/>");
+        assertTrue("Expected Number but got " + jo1.get("b").getClass(), jo1.get("b") instanceof Number);
+
+        // over max length: returned as string
+        sb.append("9");
+        JSONArray ja2 = JSONML.toJSONArray("<a>" + sb + "</a>");
+        assertTrue("Expected String but got " + ja2.get(1).getClass(), ja2.get(1) instanceof String);
+        assertEquals(1001, ((String) ja2.get(1)).length());
+        JSONObject jo2 = JSONML.toJSONObject("<a b=\"" + sb + "\"/>");
+        assertTrue("Expected String but got " + jo2.get("b").getClass(), jo2.get("b") instanceof String);
+        assertEquals(1001, ((String) jo2.get("b")).length());
+    }
+
 }
