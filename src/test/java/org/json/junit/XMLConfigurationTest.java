@@ -1071,7 +1071,72 @@ public class XMLConfigurationTest {
 
         Util.compareActualVsExpectedJsonObjects(jsonObject, expetedJsonObject);
     }
-    
+
+    @Test
+    public void testMaxNestingDepthIsSet() {
+        XMLParserConfiguration xmlParserConfiguration = XMLParserConfiguration.ORIGINAL;
+
+        assertEquals(xmlParserConfiguration.getMaxNestingDepth(), XMLParserConfiguration.DEFAULT_MAXIMUM_NESTING_DEPTH);
+
+        xmlParserConfiguration = xmlParserConfiguration.withMaxNestingDepth(42);
+
+        assertEquals(xmlParserConfiguration.getMaxNestingDepth(), 42);
+
+        xmlParserConfiguration = xmlParserConfiguration.withMaxNestingDepth(0);
+
+        assertEquals(xmlParserConfiguration.getMaxNestingDepth(), 0);
+
+        xmlParserConfiguration = xmlParserConfiguration.withMaxNestingDepth(-31415926);
+
+        assertEquals(xmlParserConfiguration.getMaxNestingDepth(), XMLParserConfiguration.UNDEFINED_MAXIMUM_NESTING_DEPTH);
+
+        xmlParserConfiguration = xmlParserConfiguration.withMaxNestingDepth(Integer.MIN_VALUE);
+
+        assertEquals(xmlParserConfiguration.getMaxNestingDepth(), XMLParserConfiguration.UNDEFINED_MAXIMUM_NESTING_DEPTH);
+    }
+
+    /**
+     * The maximum nesting depth must be kept when the configuration is
+     * further modified with the other with*() methods.
+     */
+    @Test
+    public void testMaxNestingDepthSurvivesFurtherConfiguration() {
+        XMLParserConfiguration xmlParserConfiguration = XMLParserConfiguration.ORIGINAL
+                .withMaxNestingDepth(42);
+
+        assertEquals(42, xmlParserConfiguration.withKeepStrings(true).getMaxNestingDepth());
+        assertEquals(42, xmlParserConfiguration.withcDataTagName("cdata").getMaxNestingDepth());
+        assertEquals(42, xmlParserConfiguration.withConvertNilAttributeToNull(true).getMaxNestingDepth());
+        assertEquals(42, xmlParserConfiguration.withForceList(new HashSet<String>()).getMaxNestingDepth());
+        assertEquals(42, xmlParserConfiguration
+                .withKeepStrings(true)
+                .withcDataTagName("cdata")
+                .withConvertNilAttributeToNull(true)
+                .withForceList(new HashSet<String>())
+                .getMaxNestingDepth());
+
+        xmlParserConfiguration = XMLParserConfiguration.ORIGINAL
+                .withMaxNestingDepth(XMLParserConfiguration.UNDEFINED_MAXIMUM_NESTING_DEPTH);
+        assertEquals(XMLParserConfiguration.UNDEFINED_MAXIMUM_NESTING_DEPTH,
+                xmlParserConfiguration.withKeepStrings(true).getMaxNestingDepth());
+    }
+
+    /**
+     * Every way of building a configuration defaults to the default maximum
+     * nesting depth.
+     */
+    @Test
+    public void testMaxNestingDepthDefaultForAllConstructors() {
+        assertEquals(XMLParserConfiguration.DEFAULT_MAXIMUM_NESTING_DEPTH,
+                XMLParserConfiguration.ORIGINAL.getMaxNestingDepth());
+        assertEquals(XMLParserConfiguration.DEFAULT_MAXIMUM_NESTING_DEPTH,
+                XMLParserConfiguration.KEEP_STRINGS.getMaxNestingDepth());
+        assertEquals(XMLParserConfiguration.DEFAULT_MAXIMUM_NESTING_DEPTH,
+                new XMLParserConfiguration().getMaxNestingDepth());
+        assertEquals(XMLParserConfiguration.DEFAULT_MAXIMUM_NESTING_DEPTH,
+                new XMLParserConfiguration(true, "content", true).getMaxNestingDepth());
+    }
+
     /**
      * Convenience method, given an input string and expected result,
      * convert to JSONObject and compare actual to expected result.
